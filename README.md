@@ -1,4 +1,7 @@
 
+# MAUI version of (hopefully) everything down below - FOR WINDOWS.
+
+
 # WinUI.TableView
 
 `WinUI.TableView` is a lightweight and fast data grid control made for WinUI apps. It is easy to use, and capable of handling large number of items with a focus on performance. It's derived from `ListView` so you will experience fluent look and feel in your project. It comes with all the essential features you need, plus extras like an Excel like column filter, options buttons (for columns and the TableView) and easy data export.
