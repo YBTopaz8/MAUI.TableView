@@ -1,7 +1,7 @@
-﻿
+﻿#if WINDOWS
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
-using WinUIGrid = YB.MauiDataGridView.TableView;
+using WinUIGrid = Microsoft.UI.Xaml.Controls.Grid;
 
 using Microsoft.Maui.Handlers;
 using ListViewSelectionMode = Microsoft.UI.Xaml.Controls.ListViewSelectionMode;
@@ -14,7 +14,7 @@ using GridLength = Microsoft.UI.Xaml.GridLength;
 using GridUnitType = Microsoft.UI.Xaml.GridUnitType;
 using SelectionChangedEventArgs = Microsoft.UI.Xaml.Controls.SelectionChangedEventArgs;
 using YB.MauiDataGridView;
-using TableView = YB.MauiDataGridView.TableView;
+
 using System.ComponentModel;
 using Microsoft.Maui.Controls;
 using System.Collections.ObjectModel;
@@ -37,28 +37,37 @@ public partial class TableViewImplementation : WinUIGrid, INotifyPropertyChanged
         _tableView = new TableView();
 
         AutoGenerateColumns = true;
-
+        Children.Add(_tableView);
         //_tableView.Background = new Microsoft.UI.Xaml.Media.Brush //need brush to be #191719
 
         ItemsSource = null;
-        //_tableView
-        //Children.Add(_tableView);
 
-        try
-        {
-            this.Loaded += TableViewImplementation_Loaded;
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error initializing TableView: {ex.Message}");
-        }
-
-     
+        this.Loaded += TableViewImplementation_Loaded;
+        //_tableView.BackgroundColor = Colors.Chocolate;
     }
 
     private void TableViewImplementation_Loaded(object sender, RoutedEventArgs e)
     {
         UpdateTableView();
+    }
+    private void UpdateTableView()
+    {
+        if (ItemsSource is not null)
+        {
+        }
+        if (_tableView != null)
+        {
+            _tableView.IsReadOnly = true;
+
+            if (ItemsSource is null)
+            {
+                return;
+            }
+
+            _tableView.Columns.Clear();
+            _tableView.ItemsSource = (System.Collections.IList?)ItemsSource;
+          
+        }
     }
     #region Declare Props
 
@@ -246,78 +255,24 @@ public partial class TableViewImplementation : WinUIGrid, INotifyPropertyChanged
 
     //public IAdvancedCollectionView CollectionView { get; private set; } = new AdvancedCollectionView();
     internal IDictionary<string, Predicate<object>> ActiveFilters { get; } = new Dictionary<string, Predicate<object>>();
-    internal TableViewSelectionUnit LastSelectionUnit { get; set; }
-    internal TableViewCellSlot? CurrentCellSlot { get; set; }
-    internal TableViewCellSlot? SelectionStartCellSlot { get; set; }
-    internal int? SelectionStartRowIndex { get; set; }
-    internal HashSet<TableViewCellSlot> SelectedCells { get; set; } = new HashSet<TableViewCellSlot>();
-    internal HashSet<HashSet<TableViewCellSlot>> SelectedCellRanges { get; } = new HashSet<HashSet<TableViewCellSlot>>();
-    internal bool IsEditing { get; set; }
-    internal int SelectionIndicatorWidth => SelectionMode is ListViewSelectionMode.Multiple ? 44 : 16;
+    internal new TableViewSelectionUnit LastSelectionUnit { get; set; }
+    internal new TableViewCellSlot? CurrentCellSlot { get; set; }
+    internal new TableViewCellSlot? SelectionStartCellSlot { get; set; }
+    internal new int? SelectionStartRowIndex { get; set; }
+    internal new HashSet<TableViewCellSlot> SelectedCells { get; set; } = new HashSet<TableViewCellSlot>();
+    internal new HashSet<HashSet<TableViewCellSlot>> SelectedCellRanges { get; } = new HashSet<HashSet<TableViewCellSlot>>();
+    internal new bool IsEditing { get; set; }
+    internal new int SelectionIndicatorWidth => SelectionMode is ListViewSelectionMode.Multiple ? 44 : 16;
 
 
-    public TableViewColumnsCollection Columns
+    public new TableViewColumnsCollection Columns
     {
         get
         {
             return _tableView.Columns;
         }
     }
-    private void UpdateTableView()
-    {
-        if (ItemsSource is not null)
-        {
-            //Debug.WriteLine(ItemsSource.GetType());
-        }
-        if (_tableView != null)
-        {
-            _tableView.IsReadOnly = true;
-
-            //ObservableCollection<SongModelView> mySongs = (ObservableCollection<SongModelView>)ItemsSource;
-            if (ItemsSource is null)
-            {
-                return;
-            }
-
-            _tableView.Columns.Clear();
-            _tableView.ItemsSource = (System.Collections.IList?)ItemsSource;
-            _tableView.Columns.Add(new TableViewTextColumn
-            {
-                Header = "Title",
-
-                Binding = new Microsoft.UI.Xaml.Data.Binding { Path = new PropertyPath("Title") },
-
-                Width = new GridLength(1, GridUnitType.Star)
-            });
-
-            _tableView.Columns.Add(new TableViewTextColumn
-            {
-                Header = "Artist",
-                Binding = new Microsoft.UI.Xaml.Data.Binding { Path = new PropertyPath("ArtistName") },
-
-                Width = new GridLength(1, GridUnitType.Star)
-            });
-            _tableView.Columns.Add(new TableViewTextColumn
-            {
-                Header = "Album",
-                Binding = new Microsoft.UI.Xaml.Data.Binding { Path = new PropertyPath("AlbumName") },
-                Width = new GridLength(1, GridUnitType.Star)
-            });
-            _tableView.Columns.Add(new TableViewTextColumn()
-            {
-                Header = "Duration",
-                Binding = new Microsoft.UI.Xaml.Data.Binding { Path = new PropertyPath("DurationInSecondsText") },
-                //CellTemplate = (DataTemplate)Application.Current.Resources["DurationTemplate"],
-                Width = new GridLength(1, GridUnitType.Star)
-            });
-            _tableView.Columns.Add(new TableViewTextColumn
-            {
-                Header = "Year",
-                Binding = new Microsoft.UI.Xaml.Data.Binding { Path = new PropertyPath("ReleaseYear") },
-                Width = new GridLength(1, GridUnitType.Star)
-            });
-        }
-    }
+    
 
     private void _tableView_AutoGeneratingColumn(object? sender, TableViewAutoGeneratingColumnEventArgs e)
     {
@@ -488,10 +443,10 @@ public static class MauiDataGridHandlerMapper
             native.SetValue(TableView.ShowExportOptionsProperty, view.ShowExportOptions);
     }
 
-    static TableViewImplementation GetNativeTable(MauiDataGridHandler handler)
+    static TableViewImplementation? GetNativeTable(MauiDataGridHandler handler)
     {
-        if (handler.PlatformView is Microsoft.UI.Xaml.Controls.Grid grid)
-            return grid.Children.FirstOrDefault() as TableViewImplementation;
+        if (handler.PlatformView is WinUIGrid grid && grid is not null)
+            return grid as TableViewImplementation;
         return null;
     }
 
@@ -714,6 +669,8 @@ public class MauiDataGridHandler : ViewHandler<MauiDataGrid, WinUIGrid>
 
     protected override WinUIGrid CreatePlatformView()
     {
+        return new TableViewImplementation();
+
         var gridView = new WinUIGrid();
         gridView.DoubleTapped += GridView_DoubleTapped;
 
@@ -786,7 +743,7 @@ public class MauiDataGridHandler : ViewHandler<MauiDataGrid, WinUIGrid>
             nativeTable.PropertyChanged += NativeTable_PropertyChanged;
             nativeTable.SelectionChanged += NativeTable_SelectionChanged;
             //nativeTable.PropertyChanged += NativeTable_PropertyChanged;
-            platformView.Children.Add(nativeTable);
+            platformView=nativeTable;
 
 
         }
@@ -799,7 +756,7 @@ public class MauiDataGridHandler : ViewHandler<MauiDataGrid, WinUIGrid>
 
     protected override void DisconnectHandler(WinUIGrid platformView)
     {
-        if (platformView.Children.FirstOrDefault() is TableViewImplementation nativeTable)
+        if (platformView is TableViewImplementation nativeTable)
         {
             nativeTable.Loaded -= (s, e) => VirtualView?.RaiseLoaded(e);
             nativeTable.Unloaded -= (s, e) => VirtualView?.RaiseUnloaded(e);
@@ -872,14 +829,4 @@ public class MauiDataGridHandler : ViewHandler<MauiDataGrid, WinUIGrid>
     }
 }
 
-public partial class TableViewColumnsCollection : ObservableCollection<TableViewColumn>
-{
-   
-}
-//public static class DataGridHandler
-//{
-//    public static void ConfigureTableViewHandler(IMauiHandlersCollection handlers)
-//    {
-//        handlers.AddHandler(typeof(MauiDataGrid), typeof(MauiDataGridHandler));
-//    }
-//}
+#endif

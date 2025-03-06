@@ -12,22 +12,54 @@ using Windows.Foundation;
 using BindingMode = Microsoft.Maui.Controls.BindingMode;
 using ListViewSelectionMode = Microsoft.UI.Xaml.Controls.ListViewSelectionMode;
 using Style = Microsoft.Maui.Controls.Style;
+using Microsoft.UI.Xaml;
+using System;
+using System.Collections.Generic;
 
+using System.Linq;
+
+using System.Threading.Tasks;
+
+// Correct using for MAUI types:
+using Microsoft.Maui;
+using Microsoft.Maui.Controls;
+using Microsoft.Maui.Controls.Internals;
+// No need to redefine: using TableViewColumnsCollection = YB.MauiDataGridView.TableViewColumnsCollection;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using FlyoutBase = Microsoft.UI.Xaml.Controls.Primitives.FlyoutBase; // Correct FlyoutBase
+using YB.MauiDataGridView;
+using SortDescription = YB.MauiDataGridView.SortDescription;  // Assuming you have these
+using FilterDescription = YB.MauiDataGridView.FilterDescription; // Assuming you have these
+using System.Collections;
+#endif
 namespace YB.MauiDataGridView;
 
 
-public partial class MauiDataGrid  : View, IMauiDataGrid, INotifyPropertyChanged
+
+#if MAUI
+public partial class MauiDataGrid : View
 {
-    public new event EventHandler<Microsoft.Maui.Controls.PropertyChangingEventArgs>? PropertyChanging;
-    public new event EventHandler<EventArgs>? BindingContextChanged;
-    public event EventHandler<PropertyChangedEventArgs>? PropertyChangedd;
     public MauiDataGrid()
     {
+
+    }
+}
+#endif
+
+#if WINDOWS
+    public partial class MauiDataGrid : View, IMauiDataGrid, INotifyPropertyChanged
+{
+    //public new event EventHandler<Microsoft.Maui.Controls.PropertyChangingEventArgs>? PropertyChanging;
+    public new event EventHandler<EventArgs>? BindingContextChanged;
+
+
+
+public MauiDataGrid()
+    {
+        //Columns = columns;
     }
 
-    //event EventHandler<PropertyChangedEventArgs>? IMauiDataGrid.PropertyChanged;
-
-
+#if WINDOWS
     // Add Windows-specific events:
     public new event RoutedEventHandler? Loaded;
     public new event RoutedEventHandler? Unloaded;
@@ -49,13 +81,14 @@ public partial class MauiDataGrid  : View, IMauiDataGrid, INotifyPropertyChanged
     public event TypedEventHandler<UIElement, ContextRequestedEventArgs>? ContextRequested;
     public event TypedEventHandler<FrameworkElement, DataContextChangedEventArgs>? DataContextChanged;
     //public event TypedEventHandler<FrameworkElement, PropertyChangedEventArgs>? PropertyChanged;
-    public event EventHandler<Microsoft.UI.Xaml.Controls.SelectionChangedEventArgs>? SelectionChanged; // Example - use appropriate EventArgs
+    public event EventHandler<Microsoft.UI.Xaml.Controls.SelectionChangedEventArgs>? SelectionChanged; 
     public new event EventHandler<PropertyChangedEventArgs>? PropertyChanged; // Example - use appropriate EventArgs
-    
-    // Bindable Properties
+
+
     public static readonly BindableProperty ColumnsProperty =
         BindableProperty.Create(nameof(Columns), typeof(TableViewColumnsCollection), typeof(MauiDataGrid), null, BindingMode.TwoWay, propertyChanged: OnColumnsChanged);
 
+   
     // Internal raise methods—must be called from within MyTableView.
     internal void RaiseLoaded(RoutedEventArgs e)
     {
@@ -63,7 +96,7 @@ public partial class MauiDataGrid  : View, IMauiDataGrid, INotifyPropertyChanged
     }
     internal void RaiseSelectionChanged(Microsoft.UI.Xaml.Controls.SelectionChangedEventArgs e)
     {
-        SelectionChanged?.Invoke(null, e);
+        SelectionChanged?.Invoke(this, e);
     }
     //internal void RaiseProperChanged(PropertyChangedEventArgs e)
     //{
@@ -92,7 +125,7 @@ public partial class MauiDataGrid  : View, IMauiDataGrid, INotifyPropertyChanged
     internal void RaiseDataContextChanged(object? sender, DataContextChangedEventArgs e) => DataContextChanged?.Invoke(null, e);
     internal void RaisePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        PropertyChanged?.Invoke(null, e);
+        PropertyChanged?.Invoke(this, e);
     }
 
     internal void RaiseHolding(HoldingRoutedEventArgs e) => Holding?.Invoke(this, e);
@@ -115,7 +148,8 @@ public partial class MauiDataGrid  : View, IMauiDataGrid, INotifyPropertyChanged
     }
     private void Columns_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
     {
-        // Handle Column Changes here.
+        OnPropertyChanged(nameof(Columns)); // Notify that the Columns property has changed
+
     }
 
 
@@ -131,18 +165,31 @@ public partial class MauiDataGrid  : View, IMauiDataGrid, INotifyPropertyChanged
         get => GetValue(SelectedItemProperty);
         set => SetValue(SelectedItemProperty, value);
     }
-    //public static readonly BindableProperty ColumnsProperty =
-    //    BindableProperty.Create(nameof(Columns), typeof(TableViewColumnsCollection), typeof(MauiDataGrid), null);
+    
+    
     public static readonly BindableProperty SelectedItemProperty =
     BindableProperty.Create(nameof(SelectedItem), typeof(object), typeof(MauiDataGrid), null, propertyChanged: OnSelectedItemChanged); // 
 
     private static void OnSelectedItemChanged(BindableObject bindable, object oldValue, object newValue)
     {
+        if (bindable is MauiDataGrid grid)
+        {
+            grid.OnPropertyChanged(nameof(SelectedItem)); // Good practice
+        }
 
     }
-
     public static readonly BindableProperty ItemsSourceProperty =
-        BindableProperty.Create(nameof(ItemsSource), typeof(object), typeof(MauiDataGrid), null);
+    BindableProperty.Create(nameof(ItemsSource), typeof(object), typeof(MauiDataGrid), null, BindingMode.TwoWay, propertyChanged: OnItemsSourceChanged);
+    private static void OnItemsSourceChanged(BindableObject bindable, object oldValue, object newValue)
+    {
+        // You might want to trigger a re-render of your TableView here,
+        // or update the column definitions in your handler.
+        if (bindable is MauiDataGrid grid)
+        {
+            grid.OnPropertyChanged(nameof(ItemsSource)); // Notify that the Columns property has changed
+
+        }
+    }
     public static readonly BindableProperty AutoGenerateColumnsProperty =
         BindableProperty.Create(nameof(AutoGenerateColumns), typeof(bool), typeof(MauiDataGrid), true);
     public static readonly BindableProperty CanDragItemsProperty =
@@ -311,18 +358,20 @@ BindableProperty.Create(nameof(IsReadOnly), typeof(bool), typeof(MauiDataGrid), 
     
     Microsoft.UI.Xaml.Style IMauiDataGrid.CellStyle { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     Microsoft.UI.Xaml.Style IMauiDataGrid.ColumnHeaderStyle { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    Microsoft.Maui.Controls.FlyoutBase IMauiDataGrid.RowContextFlyout { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    Microsoft.Maui.Controls.FlyoutBase IMauiDataGrid.CellContextFlyout { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
     public void ScrollIntoView(object item)
     {
         // Implementation in the handler
     }
 
+    protected override void OnPropertyChanged(string propertyName = null)
+    {
+        base.OnPropertyChanged(propertyName);
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
 
-    //internal void PropertyChangedd(PropertyChangedEventHandler e)
-    //{
-
-    //}
+#endif
 }
 #endif
-
-

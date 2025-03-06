@@ -43,7 +43,7 @@ public partial class TableView : ListView
     public TableView()
     {
         DefaultStyleKey = typeof(TableView);
-
+        
         Columns.TableView = this;
         FilterHandler = new ColumnFilterHandler(this);
         base.ItemsSource = _collectionView;

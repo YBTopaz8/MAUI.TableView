@@ -20,7 +20,7 @@ using FlyoutBase = Microsoft.Maui.Controls.FlyoutBase;
 using YB.MauiDataGridView;
 using SortDescription = YB.MauiDataGridView.SortDescription;
 using FilterDescription = YB.MauiDataGridView.FilterDescription;
-
+#endif
 namespace YB.MauiDataGridView;
 
 public interface IMauiDataGrid
@@ -34,7 +34,9 @@ public interface IMauiDataGrid
     double DataFetchSize { get; set; }
     object Footer { get; set; }
     Microsoft.Maui.Controls.DataTemplate FooterTemplate { get; set; }
+#if WINDOWS
     TransitionCollection FooterTransitions { get; set; }
+
     object Header { get; set; }
     Microsoft.Maui.Controls.DataTemplate HeaderTemplate { get; set; }
     TransitionCollection HeaderTransitions { get; set; }
@@ -110,8 +112,9 @@ public interface IMauiDataGrid
     int SelectedIndex { get; set; }
 
     void ScrollIntoView(object item);
-}
 #endif
+}
+
 
 
 
@@ -120,7 +123,14 @@ public static class DataGridHandler
     public static void ConfigureTableViewHandler(IMauiHandlersCollection handlers)
     {
 #if WINDOWS
-        handlers.AddHandler(typeof(MauiDataGrid), typeof(MauiDataGridHandler));
+        handlers.AddHandler<MauiDataGrid, MauiDataGridHandler>();
+#elif ANDROID
+        throw new NotImplementedException();
+#elif IOS
+        throw new NotImplementedException();
+#elif MACCATALYST
+        throw new NotImplementedException();
+
 #endif
     }
 }
